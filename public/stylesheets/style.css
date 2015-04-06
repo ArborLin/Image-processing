@@ -6,3 +6,11 @@ body {
 a {
   color: #00B7FF;
 }
+.canvas-bg {
+	width: 600px;
+	height: 400px;
+	background-color: #DDDDDD;
+}
+canvas {
+	max-width: 100%;
+}

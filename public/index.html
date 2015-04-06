@@ -6,8 +6,11 @@
 
 <body ng-app="app">
 	<div ng-controller="controller">
-		<input type="file" file-src='canvas.src' />
+		<input type="file" file-src="canvas.src" />
 		<p>{{ fileN }}</p>
+		<div class="canvas-bg">
+			<canvas width="600px" height="400px" canvas-ext src="canvas.src"></canvas>
+		</div>
 	</div>
 	<script src="/js/angular.js"></script>
 	<script type="text/javascript" src="/js/app.js"></script>
