@@ -7,10 +7,11 @@ a {
   color: #00B7FF;
 }
 .canvas-bg {
-	width: 600px;
-	height: 400px;
+	width: 900px;
+	height: 600px;
 	background-color: #DDDDDD;
 }
 canvas {
 	max-width: 100%;
+	max-height: 100%;
 }

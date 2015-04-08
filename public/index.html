@@ -7,10 +7,13 @@
 <body ng-app="app">
 	<div ng-controller="controller">
 		<input type="file" file-src="canvas.src" />
-		<p>{{ fileN }}</p>
+		<a href="{{ canvas.src }}" download='t.png'>a</a>
+		<p>{{ canvas.src }}</p>
 		<div class="canvas-bg">
-			<canvas width="600px" height="400px" canvas-ext src="canvas.src"></canvas>
+			<canvas width="600px" height="400px" canvas-ext src="canvas.src" process="canvas.process" protype="canvas.protype"></canvas>
 		</div>
+		<button ng-click="toGray($event)">Gray</button>
+		<button ng-click="sharp($event)">Sharp</button>
 	</div>
 	<script src="/js/angular.js"></script>
 	<script type="text/javascript" src="/js/app.js"></script>
