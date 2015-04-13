@@ -76,7 +76,19 @@ canvasExt.factory('canvasHelper', function($rootScope) {
     return imgData;
 	}
 
-	function process(canvas, proType) {
+	function invert (imgData) {
+    var d = imgData.data;
+
+    for (var i = 0; i < d.length; i += 4) {
+        d[i] = 255 - d[i];
+        d[i+1] = 255 - d[i + 1];
+        d[i+2] = 255 - d[i + 2];
+    }
+
+    return imgData;
+	}
+
+	function process(canvas, proType, img) {
 		var ctx = canvas.getContext('2d'),
 				data;
 
@@ -88,10 +100,22 @@ canvasExt.factory('canvasHelper', function($rootScope) {
 			case 'sharp':
 				data = sharp(data);
 				break;
+			case 'invert':
+				data = invert(data);
+				break;
 			default:
 				break;
 		}
 		ctx.putImageData(data, 0, 0);
+		if (proType == 'zoomIn' || proType == 'zoomOut') {
+			var scale = 1.5;
+			if(proType == 'zoomIn')
+				scale = 0.8;
+			canvas.width *= scale;
+			canvas.height *= scale;
+			ctx.scale(scale, scale);
+			ctx.drawImage(img,0,0);
+		}
 		alert('ok');
 		return canvas;
 	}
@@ -102,6 +126,8 @@ canvasExt.factory('canvasHelper', function($rootScope) {
 		fileToDataURI: fileToDataURI,
 		//process
 		toGray: toGray,
+		sharp: sharp,
+		invert: invert,
 		process: process
 	}
 });
@@ -158,8 +184,9 @@ canvasExt.directive('canvasExt', function(canvasHelper) {
 			$scope.$watch(function() {
 				return $scope.process;
 			}, function(newVal) {
-				if (newVal) {					
-					$scope.src = canvasHelper.process(canvas, $scope.protype).toDataURL();
+				if (newVal) {		
+					var img = loadImage();			
+					$scope.src = canvasHelper.process(canvas, $scope.protype, img).toDataURL();	//处理后均转为png  格式转换交给后端
 					$scope.process = false;
 					$scope.$apply();
 				}

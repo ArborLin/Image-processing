@@ -12,8 +12,12 @@
 		<div class="canvas-bg">
 			<canvas width="600px" height="400px" canvas-ext src="canvas.src" process="canvas.process" protype="canvas.protype"></canvas>
 		</div>
-		<button ng-click="toGray($event)">Gray</button>
-		<button ng-click="sharp($event)">Sharp</button>
+		<button ng-click="process($event)" data-protype="toGray">Gray</button>
+		<button ng-click="process($event)" data-protype="sharp">Sharp</button>
+		<button ng-click="process($event)" data-protype="invert">Invert</button>
+		<button ng-click="process($event)" data-protype="zoomIn">ZoomIn</button>
+		<button ng-click="process($event)" data-protype="zoomOut">ZoomOut</button>
+		<button ng-click="saveImage($event)" data-protype="zoomOut">Save</button>		
 	</div>
 	<script src="/js/angular.js"></script>
 	<script type="text/javascript" src="/js/app.js"></script>

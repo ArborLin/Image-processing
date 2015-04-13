@@ -1,18 +1,22 @@
-angular.module('app').controller('controller',function($scope, $element, canvasHelper){
+angular.module('app').controller('controller',function($scope, $element, $http,canvasHelper){
 	$scope.canvas = {
 		src : '',
 		process: false,
 		proType: 't'
 	};
 
-	$scope.toGray = function ($event) {
-		$scope.canvas.protype = 'toGray';
+	$scope.process = function ($event) {
+		var protype = $event.target.dataset.protype;
+		$scope.canvas.protype = protype;
 		$scope.canvas.process = true;
 	};
 
-	$scope.sharp = function ($event) {
-		$scope.canvas.protype = 'sharp';
-		$scope.canvas.process = true;
-		console.log($scope.canvas.process);
-	};
+	$scope.saveImage = function () {
+		var imageURL = $scope.canvas.src;
+		$http.post('/users/', {image: imageURL})
+		.success(function(data, status){
+			alert('success');
+		}); 
+	}
+
 });
