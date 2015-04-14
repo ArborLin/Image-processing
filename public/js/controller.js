@@ -2,7 +2,8 @@ angular.module('app').controller('controller',function($scope, $element, $http,c
 	$scope.canvas = {
 		src : '',
 		process: false,
-		proType: 't'
+		proType: 't',
+		download: null
 	};
 
 	$scope.process = function ($event) {
@@ -15,7 +16,7 @@ angular.module('app').controller('controller',function($scope, $element, $http,c
 		var imageURL = $scope.canvas.src;
 		$http.post('/users/', {image: imageURL})
 		.success(function(data, status){
-			alert('success');
+			$scope.canvas.download = '/users/download?filename=' + data;
 		}); 
 	}
 

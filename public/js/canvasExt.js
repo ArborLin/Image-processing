@@ -188,7 +188,7 @@ canvasExt.directive('canvasExt', function(canvasHelper) {
 					var img = loadImage();			
 					$scope.src = canvasHelper.process(canvas, $scope.protype, img).toDataURL();	//处理后均转为png  格式转换交给后端
 					$scope.process = false;
-					$scope.$apply();
+					//$scope.$apply();
 				}
 			});
 
