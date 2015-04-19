@@ -4,7 +4,8 @@ angular.module('app').controller('controller',function($scope, $element, $http,c
 		process: false,
 		proType: 't',
 		download: null,
-		format: 'png'
+		format: 'png',
+		watermark: ''
 	};
 
 	$scope.process = function ($event) {

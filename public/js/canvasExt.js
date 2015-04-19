@@ -88,7 +88,7 @@ canvasExt.factory('canvasHelper', function($rootScope) {
     return imgData;
 	}
 
-	function process(canvas, proType, img) {
+	function process(canvas, proType, img, wmSrc, callback) {
 		var ctx = canvas.getContext('2d'),
 				data;
 
@@ -123,50 +123,58 @@ canvasExt.factory('canvasHelper', function($rootScope) {
 			ctx.translate(canvas.width, 0);
 			ctx.rotate(90 * Math.PI / 180);
 			ctx.drawImage(img, 0, 0);
-		};
+		}
 		if (proType == 'watermark') {
 			var t = new Image();
-			t.src = '../images/tset.png';
+			t.src = wmSrc;
 			t.onload = function (argument) {
 				var watermark = t;
 				watermark.currentX = 0,
 				watermark.currentY = 0;
 
 				ctx.drawImage(watermark, watermark.currentX, watermark.currentY);
-				drag(canvas, img, watermark);			
+				drag(canvas, img, watermark, callback);			
 			}
-		}
-
-		return canvas;
+		} else
+			callback(canvas.toDataURL());
+		//return canvas;
 	}
 
 	//drag watermark
-	function drag (canvas, img, watermark) {
+	function drag (canvas, img, watermark, callback) {
 		var dragable = false;
+		var mwid, mheight;
 
 		canvas.addEventListener('mouseup', function (event) {
 			dragable = false;
+			canvas.style.cursor = 'auto';
 		});
 		canvas.addEventListener('mousedown', function (event) {
-			if (isInRect(event, canvas, watermark))
+			if (isInRect(event, canvas, watermark)){
 				dragable = true;
+				var pos = getMousePos(canvas, event.clientX, event.clientY);
+				mwid = pos.x - watermark.currentX;
+				mheight = pos.y - watermark.currentY;
+			}
 		});
 		canvas.addEventListener('mousemove', function (event) {
 			if(!dragable)
 				return;
 			var pos = getMousePos(canvas, event.clientX, event.clientY);
-			watermark.currentX = pos.x;
-			watermark.currentY = pos.y;
-			redraw(canvas, pos, img, watermark);
+			canvas.style.cursor = 'move';
+			watermark.currentX = pos.x - mwid;
+			watermark.currentY = pos.y - mheight;
+			redraw(canvas, img, watermark);
+			callback(canvas.toDataURL());
 		});
 	}
 
-	function redraw (canvas, pos, img, watermark) {
+	function redraw (canvas, img, watermark) {
 		var ctx = canvas.getContext('2d');
 
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		ctx.drawImage(img, 0, 0);
-		ctx.drawImage(watermark, pos.x, pos.y);
+		ctx.drawImage(watermark, watermark.currentX, watermark.currentY);
 	}
 
 	function getMousePos (canvas, x, y) {
@@ -233,7 +241,8 @@ canvasExt.directive('canvasExt', function(canvasHelper) {
 		scope: {
 			src: '=',
 			process: '=',
-			protype: '='
+			protype: '=',
+			watermark: '='
 		},
 		link: function($scope, element, attrs) {
 			var canvas = element[0],
@@ -257,11 +266,16 @@ canvasExt.directive('canvasExt', function(canvasHelper) {
 			}, function(newVal) {
 				if (newVal) {		
 					var img = loadImage();			
-					$scope.src = canvasHelper.process(canvas, $scope.protype, img).toDataURL();	//处理后均转为png  格式转换交给后端
+					canvasHelper.process(canvas, $scope.protype, img, $scope.watermark, updateSrc);	//处理后均转为png  格式转换交给后端
 					$scope.process = false;
 					//$scope.$apply();
 				}
 			});
+
+			function updateSrc(src) {
+				$scope.src = src;
+				$scope.$apply();
+			}
 
 			function loadImage() {
 				var img = new Image();
