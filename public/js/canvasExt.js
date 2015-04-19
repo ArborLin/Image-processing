@@ -114,10 +114,81 @@ canvasExt.factory('canvasHelper', function($rootScope) {
 			canvas.width *= scale;
 			canvas.height *= scale;
 			ctx.scale(scale, scale);
-			ctx.drawImage(img,0,0);
+			ctx.drawImage(img, 0, 0);
 		}
-		alert('ok');
+		if (proType == 'rotate') {
+			var temp = canvas.width;
+			canvas.width = canvas.height;
+			canvas.height = temp; 
+			ctx.translate(canvas.width, 0);
+			ctx.rotate(90 * Math.PI / 180);
+			ctx.drawImage(img, 0, 0);
+		};
+		if (proType == 'watermark') {
+			var t = new Image();
+			t.src = '../images/tset.png';
+			t.onload = function (argument) {
+				var watermark = t;
+				watermark.currentX = 0,
+				watermark.currentY = 0;
+
+				ctx.drawImage(watermark, watermark.currentX, watermark.currentY);
+				drag(canvas, img, watermark);			
+			}
+		}
+
 		return canvas;
+	}
+
+	//drag watermark
+	function drag (canvas, img, watermark) {
+		var dragable = false;
+
+		canvas.addEventListener('mouseup', function (event) {
+			dragable = false;
+		});
+		canvas.addEventListener('mousedown', function (event) {
+			if (isInRect(event, canvas, watermark))
+				dragable = true;
+		});
+		canvas.addEventListener('mousemove', function (event) {
+			if(!dragable)
+				return;
+			var pos = getMousePos(canvas, event.clientX, event.clientY);
+			watermark.currentX = pos.x;
+			watermark.currentY = pos.y;
+			redraw(canvas, pos, img, watermark);
+		});
+	}
+
+	function redraw (canvas, pos, img, watermark) {
+		var ctx = canvas.getContext('2d');
+
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.drawImage(img, 0, 0);
+		ctx.drawImage(watermark, pos.x, pos.y);
+	}
+
+	function getMousePos (canvas, x, y) {
+		var rec = canvas.getBoundingClientRect();
+		/*     
+		x: evt.clientX - rect.left * (canvas.width / rect.width),
+    y: evt.clientY - rect.top * (canvas.height / rect.height)*/
+		return {
+			x: x - rec.left,
+			y: y - rec.top
+		}
+	}
+
+	function isInRect (event, canvas, rec) {
+		var pos = getMousePos(canvas, event.clientX, event.clientY);
+
+		if ((pos.x > rec.currentX + rec.width) || pos.x < rec.currentX)
+			return false;
+		if ((pos.y > rec.currentY + rec.height) || pos.x < rec.currentY)
+			return false;
+
+		return true;
 	}
 
 	return {
@@ -129,7 +200,7 @@ canvasExt.factory('canvasHelper', function($rootScope) {
 		sharp: sharp,
 		invert: invert,
 		process: process
-	}
+	};
 });
 
 canvasExt.directive('fileSrc', function(canvasHelper) {

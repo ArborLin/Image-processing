@@ -9,18 +9,21 @@ router.post('/', function(req, res, next) {
   //res.send('respond with a resource');
   var tmp = path.resolve('..', 'public/tmp');
   var imgData = req.body.image,
+      imgFormat = req.body.format,
       base64Data = imgData.replace(/^data:image\/\w+;base64,/, ""),
       dataBuffer = new Buffer(base64Data, 'base64');
   var filename = Date.parse(new Date()) + Math.floor(Math.random() * 1000),
-  		filePath = tmp + '/' + filename +'.png';
+  		filePath = tmp + '/' + filename ;
 
-  fs.writeFile(tmp + '/' + filename +'.png', dataBuffer, function(err) {
+  fs.writeFile(filePath +'.png', dataBuffer, function(err) {
       if (err) {
         res.send(err);
       } else {
       	var im = gm.subClass({ imageMagick: true });
-      	im(filePath).setFormat('gif');
-      	res.send(filename + '.gif'); //filename + .format  
+        im(filePath + '.png').write(filePath + '.' + imgFormat, function(err) {
+          if(!err)
+            res.send(filename + '.' + imgFormat);
+        }); 
       }
   });
 });

@@ -3,7 +3,8 @@ angular.module('app').controller('controller',function($scope, $element, $http,c
 		src : '',
 		process: false,
 		proType: 't',
-		download: null
+		download: null,
+		format: 'png'
 	};
 
 	$scope.process = function ($event) {
@@ -13,8 +14,9 @@ angular.module('app').controller('controller',function($scope, $element, $http,c
 	};
 
 	$scope.saveImage = function () {
-		var imageURL = $scope.canvas.src;
-		$http.post('/users/', {image: imageURL})
+		var imageURL = $scope.canvas.src,
+				imageFormat = $scope.canvas.format;
+		$http.post('/users/', {image: imageURL, format: imageFormat})
 		.success(function(data, status){
 			$scope.canvas.download = '/users/download?filename=' + data;
 		}); 

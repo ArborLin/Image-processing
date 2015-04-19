@@ -7,7 +7,7 @@
 <body ng-app="app">
 	<div ng-controller="controller">
 		<input type="file" file-src="canvas.src" />
-		<a href="{{ canvas.src }}" download='t.png'>a</a>
+		<!-- <a href="{{ canvas.src }}" download='t.png'>a</a> -->
 		<p>{{ canvas.src }}</p>
 		<div class="canvas-bg">
 			<canvas width="600px" height="400px" canvas-ext src="canvas.src" process="canvas.process" protype="canvas.protype"></canvas>
@@ -17,7 +17,17 @@
 		<button ng-click="process($event)" data-protype="invert">Invert</button>
 		<button ng-click="process($event)" data-protype="zoomIn">ZoomIn</button>
 		<button ng-click="process($event)" data-protype="zoomOut">ZoomOut</button>
-		<button ng-click="saveImage($event)" data-protype="zoomOut">Save</button>	
+		<button ng-click="process($event)" data-protype="rotate">Rotate</button>
+		<button ng-click="process($event)" data-protype="watermark">watermark</button>
+		<div>
+			<button ng-click="saveImage($event)">Save As</button>	
+			<select ng-model="canvas.format">
+				<option value="png">png</option>
+				<option value="jpg">jpg</option>
+				<option value="gif">gif</option>
+				<option value="bmp">bmp</option>
+			</select>
+		</div>
 		<iframe src="{{ canvas.download }}" style="display:none"></iframe>	
 	</div>
 	<script src="/js/angular.js"></script>
