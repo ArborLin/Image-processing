@@ -113,16 +113,20 @@ canvasExt.factory('canvasHelper', function($rootScope) {
 				scale = 0.8;
 			canvas.width *= scale;
 			canvas.height *= scale;
+			ctx.save();
 			ctx.scale(scale, scale);
 			ctx.drawImage(img, 0, 0);
+			ctx.restore();
 		}
 		if (proType == 'rotate') {
 			var temp = canvas.width;
 			canvas.width = canvas.height;
 			canvas.height = temp; 
+			ctx.save();
 			ctx.translate(canvas.width, 0);
 			ctx.rotate(90 * Math.PI / 180);
 			ctx.drawImage(img, 0, 0);
+			ctx.restore();
 		}	
 		if (proType == 'crop') {
 			var select = new Selection(20, 20, 200, 200);
@@ -150,40 +154,179 @@ canvasExt.factory('canvasHelper', function($rootScope) {
 		var dragable = false;
 		var mwid, mheight;
 
+		canvas.addEventListener('dblclick', function (event) {
+			var ctx = canvas.getContext('2d');
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			canvas.width = watermark.w;
+			canvas.height = watermark.h;
+			ctx.drawImage(img, watermark.x, watermark.y, watermark.w, watermark.h, 0, 0, watermark.w, watermark.h);
+			watermark.type = null;
+			callback(canvas.toDataURL());
+		},false);
 		canvas.addEventListener('mouseup', function (event) {
 			dragable = false;
 			canvas.style.cursor = 'auto';
 
 			if (watermark.type == 'rect') {
-				
+				for (i = 0; i < 4; i++) {
+            watermark.bDrag[i] = false;
+        }
+        watermark.px = 0;
+        watermark.py = 0;
 			}
 
 
 			//alert(watermark.currentX +'' +watermark.currentY);
 		},false);
+
 		canvas.addEventListener('mousedown', function (event) {
+			var pos = getMousePos(canvas, event.clientX, event.clientY);
 			if (isInRect(event, canvas, watermark)){
 				dragable = true;
-				var pos = getMousePos(canvas, event.clientX, event.clientY);
 				mwid = pos.x - watermark.currentX;
 				mheight = pos.y - watermark.currentY;
+			} 
+
+			/*
+			
+			 */
+			if (watermark.type == 'rect') {
+				watermark.px = pos.x - watermark.x;
+        watermark.py = pos.y - watermark.y;
+
+        if (watermark.bHover[0]) {
+            watermark.px = pos.x - watermark.x;
+            watermark.py = pos.y - watermark.y;
+            watermark.bDrag[0] = true;
+        }
+        if (watermark.bHover[1]) {
+            watermark.px = pos.x - watermark.x - watermark.w;
+            watermark.py = pos.y - watermark.y;
+            watermark.bDrag[1] = true;
+        }
+        if (watermark.bHover[2]) {
+            watermark.px = pos.x - watermark.x - watermark.w;
+            watermark.py = pos.y - watermark.y - watermark.h;
+            watermark.bDrag[2] = true;
+        }
+        if (watermark.bHover[3]) {
+            watermark.px = pos.x - watermark.x;
+            watermark.py = pos.y - watermark.y - watermark.h;
+            watermark.bDrag[3] = true;
+        }
 			}
+
 		},false);
+
 		canvas.addEventListener('mousemove', function (event) {
+			if(watermark.type =='rect') {
+
+				var pos = getMousePos(canvas, event.clientX, event.clientY);
+
+				for (var i = 0; i < 4; i++) {
+					watermark.bHover[i] = false;
+					watermark.iCSize[i] = watermark.csize;
+				}
+
+				if (pos.x > watermark.x - watermark.csizeh && pos.x < watermark.x + watermark.csizeh &&
+					pos.y > watermark.y - watermark.csizeh && pos.y < watermark.y + watermark.csizeh)	{
+					watermark.bHover[0] = true;
+					watermark.iCSize[0] = watermark.csizeh;
+					dragable = false;
+				}
+
+				if (pos.x > watermark.x + watermark.w - watermark.csizeh && pos.x < watermark.x + watermark.w + watermark.csizeh &&
+					pos.y > watermark.y - watermark.csizeh && pos.y < watermark.y + watermark.csizeh) {
+					watermark.bHover[1] = true;
+					watermark.iCSize[1] = watermark.csizeh;
+					dragable = false;
+				}
+
+				if (pos.x > watermark.x + watermark.w - watermark.csizeh && pos.x < watermark.x + watermark.w + watermark.csizeh &&
+					pos.y > watermark.y + watermark.h - watermark.csizeh && pos.y < watermark.y + watermark.h + watermark.csizeh) {
+					watermark.bHover[2] = true;
+					watermark.iCSize[2] = watermark.csizeh;
+					dragable = false;
+				}
+
+				if (pos.x > watermark.x - watermark.csizeh && pos.x < watermark.x + watermark.csizeh &&
+          pos.y > watermark.y + watermark.h-watermark.csizeh && pos.y < watermark.y + watermark.h + watermark.csizeh) {
+
+          watermark.bHover[3] = true;
+          watermark.iCSize[3] = watermark.csizeh;
+          dragable = false;
+        }
+
+        /*
+        
+         */
+        // in case of dragging of resize cubes
+        var iFW, iFH;
+        if (watermark.bDrag[0]) {
+            var iFX = pos.x - watermark.px;
+            var iFY = pos.y - watermark.py;
+            iFW = watermark.w + watermark.x - iFX;
+            iFH = watermark.h + watermark.y - iFY;
+        }
+        if (watermark.bDrag[1]) {
+            var iFX = watermark.x;
+            var iFY = pos.y - watermark.py;
+            iFW = pos.x - watermark.px - iFX;
+            iFH = watermark.h + watermark.y - iFY;
+        }
+        if (watermark.bDrag[2]) {
+            var iFX = watermark.x;
+            var iFY = watermark.y;
+            iFW = pos.x - watermark.px - iFX;
+            iFH = pos.y - watermark.py - iFY;
+        }
+        if (watermark.bDrag[3]) {
+            var iFX = pos.x - watermark.px;
+            var iFY = watermark.y;
+            iFW = watermark.w + watermark.x - iFX;
+            iFH = pos.y - watermark.py - iFY;
+        }
+
+        if (iFW > watermark.csizeh * 2 && iFH > watermark.csizeh * 2) {
+            watermark.w = iFW;
+            watermark.h = iFH;
+
+            watermark.x = iFX;
+            watermark.y = iFY;
+        }
+	
+        watermark.width = watermark.w;
+				watermark.height = watermark.h;	
+				
+
+				redraw(canvas, img, watermark);
+			}
+
 			if(!dragable)
 				return;
-			var pos = getMousePos(canvas, event.clientX, event.clientY);
-			canvas.style.cursor = 'move';
+			else {
+				var pos = getMousePos(canvas, event.clientX, event.clientY);
+				canvas.style.cursor = 'move';
 
-			watermark.currentX = pos.x - mwid;
-			watermark.currentY = pos.y - mheight;
+				watermark.currentX = pos.x - mwid;
+				watermark.currentY = pos.y - mheight;
 
-			if(watermark.type =='rect') {
-				watermark.x = watermark.currentX;
-				watermark.y = watermark.currentY;	
+				if(watermark.type == 'rect') {
+					watermark.x = watermark.currentX;
+					watermark.y = watermark.currentY;
+					watermark.width = watermark.w;
+					watermark.height = watermark.h;	
+				}
+				redraw(canvas, img, watermark);
 			}
+			/*
+			
+			 */
 
-			redraw(canvas, img, watermark);
+			/*
+			
+			 */
+
 			callback(canvas.toDataURL());
 		},false);
 	}
@@ -297,7 +440,8 @@ canvasExt.directive('canvasExt', function(canvasHelper) {
 			src: '=',
 			process: '=',
 			protype: '=',
-			watermark: '='
+			watermark: '=',
+			dataurl: '='
 		},
 		link: function($scope, element, attrs) {
 			var canvas = element[0],
@@ -306,13 +450,13 @@ canvasExt.directive('canvasExt', function(canvasHelper) {
 			$scope.$watch(function() {
 				return $scope.src;
 			}, function(newVal) {
-				var img = loadImage();
-				
-				img.onload = function() {
-					imageToCanvas(img, canvas);
-					/*var u = ctx.canvas.toDataURL('image/jpeg',1.0);
-					u = u.replace('image/jpeg','image/octet-stream');
-					document.location.href = u;*/
+					var img = loadImage($scope.src);
+							$scope.dataurl = $scope.src;
+					img.onload = function() {
+						imageToCanvas(img, canvas);
+						/*var u = ctx.canvas.toDataURL('image/jpeg',1.0);
+						u = u.replace('image/jpeg','image/octet-stream');
+						document.location.href = u;*/
 				};
 			});
 
@@ -320,7 +464,7 @@ canvasExt.directive('canvasExt', function(canvasHelper) {
 				return $scope.process;
 			}, function(newVal) {
 				if (newVal) {		
-					var img = loadImage();		
+					var img = loadImage($scope.dataurl);		
 					canvasHelper.process(canvas, $scope.protype, img, $scope.watermark, updateSrc);	//处理后均转为png  格式转换交给后端
 					//$scope.$apply();	//bug
 				}
@@ -328,15 +472,15 @@ canvasExt.directive('canvasExt', function(canvasHelper) {
 
 			function updateSrc(src) {
 					$scope.process = false;
-					$scope.src = src;
-					
+					$scope.dataurl = src;
+
 					$scope.$apply(); //bug
 			}
 
-			function loadImage() {
+			function loadImage(src) {
 				var img = new Image();
 				
-				img.src = $scope.src;
+				img.src = src;
 
 				return img;
 			}

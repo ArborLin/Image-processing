@@ -5,7 +5,8 @@ angular.module('app').controller('controller',function($scope, $element, $http, 
 		proType: 't',
 		download: null,
 		format: 'png',
-		watermark: ''
+		watermark: '',
+		dataurl:''
 	};
 
 	$scope.process = function ($event) {
@@ -15,7 +16,7 @@ angular.module('app').controller('controller',function($scope, $element, $http, 
 	};
 
 	$scope.saveImage = function () {
-		var imageURL = $scope.canvas.src,
+		var imageURL = $scope.canvas.dataurl,
 				imageFormat = $scope.canvas.format;
 		$http.post('/users/', {image: imageURL, format: imageFormat})
 		.success(function(data, status){
