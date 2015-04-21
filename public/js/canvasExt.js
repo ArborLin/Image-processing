@@ -68,8 +68,8 @@ canvasExt.factory('canvasHelper', function($rootScope) {
       var E = (ii - 1) * 4;
 
       for(var j = 0;j < 3;j ++){
-          var delta = data[i + j] - (data[B + j] + data[E + j] + data[A + j]) / 3;
-          data[i + j] += delta * lamta;
+        var delta = data[i + j] - (data[B + j] + data[E + j] + data[A + j]) / 3;
+        data[i + j] += delta * lamta;
       }
     }
 
@@ -80,9 +80,9 @@ canvasExt.factory('canvasHelper', function($rootScope) {
     var d = imgData.data;
 
     for (var i = 0; i < d.length; i += 4) {
-        d[i] = 255 - d[i];
-        d[i+1] = 255 - d[i + 1];
-        d[i+2] = 255 - d[i + 2];
+      d[i] = 255 - d[i];
+      d[i+1] = 255 - d[i + 1];
+      d[i+2] = 255 - d[i + 2];
     }
 
     return imgData;
@@ -123,6 +123,11 @@ canvasExt.factory('canvasHelper', function($rootScope) {
 			ctx.translate(canvas.width, 0);
 			ctx.rotate(90 * Math.PI / 180);
 			ctx.drawImage(img, 0, 0);
+		}	
+		if (proType == 'crop') {
+			var select = new Selection(20, 20, 200, 200);
+			select.draw(canvas);
+			drag(canvas, img, select, callback);
 		}
 		if (proType == 'watermark') {
 			var t = new Image();
@@ -148,7 +153,14 @@ canvasExt.factory('canvasHelper', function($rootScope) {
 		canvas.addEventListener('mouseup', function (event) {
 			dragable = false;
 			canvas.style.cursor = 'auto';
-		});
+
+			if (watermark.type == 'rect') {
+				
+			}
+
+
+			//alert(watermark.currentX +'' +watermark.currentY);
+		},false);
 		canvas.addEventListener('mousedown', function (event) {
 			if (isInRect(event, canvas, watermark)){
 				dragable = true;
@@ -156,17 +168,24 @@ canvasExt.factory('canvasHelper', function($rootScope) {
 				mwid = pos.x - watermark.currentX;
 				mheight = pos.y - watermark.currentY;
 			}
-		});
+		},false);
 		canvas.addEventListener('mousemove', function (event) {
 			if(!dragable)
 				return;
 			var pos = getMousePos(canvas, event.clientX, event.clientY);
 			canvas.style.cursor = 'move';
+
 			watermark.currentX = pos.x - mwid;
 			watermark.currentY = pos.y - mheight;
+
+			if(watermark.type =='rect') {
+				watermark.x = watermark.currentX;
+				watermark.y = watermark.currentY;	
+			}
+
 			redraw(canvas, img, watermark);
 			callback(canvas.toDataURL());
-		});
+		},false);
 	}
 
 	function redraw (canvas, img, watermark) {
@@ -174,7 +193,10 @@ canvasExt.factory('canvasHelper', function($rootScope) {
 
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		ctx.drawImage(img, 0, 0);
-		ctx.drawImage(watermark, watermark.currentX, watermark.currentY);
+		if (watermark.type == 'rect')
+			watermark.draw(canvas);
+		else
+			ctx.drawImage(watermark, watermark.currentX, watermark.currentY);
 	}
 
 	function getMousePos (canvas, x, y) {
@@ -193,11 +215,44 @@ canvasExt.factory('canvasHelper', function($rootScope) {
 
 		if ((pos.x > rec.currentX + rec.width) || pos.x < rec.currentX)
 			return false;
-		if ((pos.y > rec.currentY + rec.height) || pos.x < rec.currentY)
+		if ((pos.y > rec.currentY + rec.height) || pos.y < rec.currentY)
 			return false;
 
 		return true;
 	}
+
+	//crop select
+	function Selection (x, y, width, height) {
+		this.x = x;
+		this.y = y;
+		this.currentX = x;
+		this.currentY = y;
+		this.w = width;
+		this.h = height;
+		this.type = 'rect';
+
+	  this.csize = 6; // resize cubes size
+    this.csizeh = 10; // resize cubes size (on hover)
+		this.iCSize = [this.csize, this.csize, this.csize, this.csize]; // resize cubes sizes
+		this.bHover = [false, false, false, false]; // hover statuses
+    this.bDrag = [false, false, false, false]; // drag statuses
+    this.bDragAll = false; // drag whole selection
+
+    this.draw = function (canvas) {
+    	var ctx = canvas.getContext('2d');
+
+    	ctx.fillStyle = 'rgba(0,0,0,.4)';
+    	ctx.fillRect(this.x, this.y, this.w, this.h);
+    	// draw resize cubes
+	    ctx.fillStyle = '#fff';
+	    ctx.fillRect(this.x - this.iCSize[0], this.y - this.iCSize[0], this.iCSize[0] * 2, this.iCSize[0] * 2);
+	    ctx.fillRect(this.x + this.w - this.iCSize[1], this.y - this.iCSize[1], this.iCSize[1] * 2, this.iCSize[1] * 2);
+	    ctx.fillRect(this.x + this.w - this.iCSize[2], this.y + this.h - this.iCSize[2], this.iCSize[2] * 2, this.iCSize[2] * 2);
+	    ctx.fillRect(this.x - this.iCSize[3], this.y + this.h - this.iCSize[3], this.iCSize[3] * 2, this.iCSize[3] * 2);
+    };
+	}
+
+	
 
 	return {
 		createCanvasContext: createCanvasContext,
@@ -265,16 +320,17 @@ canvasExt.directive('canvasExt', function(canvasHelper) {
 				return $scope.process;
 			}, function(newVal) {
 				if (newVal) {		
-					var img = loadImage();			
+					var img = loadImage();		
 					canvasHelper.process(canvas, $scope.protype, img, $scope.watermark, updateSrc);	//处理后均转为png  格式转换交给后端
-					$scope.process = false;
-					//$scope.$apply();
+					//$scope.$apply();	//bug
 				}
 			});
 
 			function updateSrc(src) {
-				$scope.src = src;
-				$scope.$apply();
+					$scope.process = false;
+					$scope.src = src;
+					
+					$scope.$apply(); //bug
 			}
 
 			function loadImage() {

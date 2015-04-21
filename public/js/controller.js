@@ -1,4 +1,4 @@
-angular.module('app').controller('controller',function($scope, $element, $http,canvasHelper){
+angular.module('app').controller('controller',function($scope, $element, $http, canvasHelper){
 	$scope.canvas = {
 		src : '',
 		process: false,
