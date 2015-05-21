@@ -1,17 +1,42 @@
 body {
-  padding: 50px;
+  padding: 20px 50px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  background-color: #d2d0d0;
 }
 
 a {
   color: #00B7FF;
 }
+.btn-file {
+	position: relative;
+	padding: 5px 10px;
+	width: auto;
+	height: auto;
+	overflow: hidden;
+}
+input[type="file"] {
+	position: absolute;
+	opacity: 0;
+	top: 0;
+	right: 0;
+	display: block;
+	height: 100%;
+	cursor: pointer;
+}
 .canvas-bg {
 	width: 900px;
 	height: 600px;
-	background-color: #DDDDDD;
+	background-color: #ecebeb;
+	box-shadow:inset 0 0 20px rgba(50,50,50,.4);
 }
 canvas {
 	max-width: 100%;
 	max-height: 100%;
+}
+
+.btn {
+	margin: 10px 20px;
+}
+.process-bar {
+	background: #27282b;
 }
