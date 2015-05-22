@@ -1,5 +1,7 @@
 var canvasExt = angular.module('canvasExt', []);
 canvasExt.factory('canvasHelper', function($rootScope) {
+// add
+  var layer = [];
 
   function createCanvasContext(width, height) {
     var canvas = document.createElement('canvas');
@@ -136,128 +138,171 @@ canvasExt.factory('canvasHelper', function($rootScope) {
     } 
     if (proType == 'crop') {
       var select = new Selection(20, 20, 200, 200);
+      //add
+      layer.push(select);
       select.draw(canvas);
-      drag(canvas, img, select, callback);
-    }
-    if (proType == 'watermark') {
+
+    } else if (proType == 'watermark') {
       var t = new Image();
       t.src = wmSrc;
       t.onload = function (argument) {
-        var watermark = t;
-        watermark.currentX = 0,
-        watermark.currentY = 0;
-
-        ctx.drawImage(watermark, watermark.currentX, watermark.currentY);
-        drag(canvas, img, watermark, callback);     
+        //add
+        var watermark = new ImageObj(t, t.width, t.height);
+        layer.push(watermark);
+        watermark.draw(canvas);
+        callback(canvas.toDataURL());
+   
       }
-    } else
-      callback(canvas.toDataURL());
+    } else {
+      layer = [];
+      var t = new Image();
+      t.src = canvas.toDataURL();
+      t.onload = function (argument) {
+        var watermark = new ImageObj(t, t.width, t.height);
+        layer.push(watermark);
+      }
+      callback(canvas.toDataURL()); 
+    }
     //return canvas;
   }
 
-  //drag watermark
-  function drag (canvas, img, watermark, callback) {
+  //add
+  function init (canvas, img, callback) {
     var dragable = false;
     var mwid, mheight;
+    var active;
+
+    layer = [];
+    layer.push(new ImageObj(img, img.width, img.height));
 
     canvas.addEventListener('dblclick', function (event) {
-      var ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      canvas.width = watermark.w;
-      canvas.height = watermark.h;
-      ctx.drawImage(img, watermark.x, watermark.y, watermark.w, watermark.h, 0, 0, watermark.w, watermark.h);
-      watermark.type = null;
-      callback(canvas.toDataURL());
+      if (active && active.type == 'rect'){
+        layer.pop();
+        redraw(canvas, layer);
+        var t = new Image();
+        t.src = canvas.toDataURL();
+        t.onload = function (argument) {
+          var ctx = canvas.getContext('2d');
+          var watermark = new ImageObj(t, t.width, t.height);
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          canvas.width = active.w;
+          canvas.height = active.h;
+          ctx.drawImage(t, active.x, active.y, active.w, active.h, 0, 0, active.w, active.h);
+
+          var t2 = new Image();
+          t2.src = canvas.toDataURL();
+          t2.onload = function (argument) {
+            watermark = new ImageObj(t2, t2.width, t2.height);
+            layer = [];
+            layer.push(watermark);          
+          }
+          active.type = null;
+
+          callback(canvas.toDataURL());
+        }  
+      }
+      
     },false);
-    
+
     canvas.addEventListener('mouseup', function (event) {
       dragable = false;
       canvas.style.cursor = 'auto';
 
-      if (watermark.type == 'rect') {
+      if (active && active.type == 'rect') {
         for (i = 0; i < 4; i++) {
-          watermark.bDrag[i] = false;
+          active.bDrag[i] = false;
         }
-        watermark.px = 0;
-        watermark.py = 0;
+        active.px = 0;
+        active.py = 0;
       }
     },false);
 
     canvas.addEventListener('mousedown', function (event) {
       var pos = getMousePos(canvas, event.clientX, event.clientY);
-      if (isInRect(event, canvas, watermark)){
-        dragable = true;
-        mwid = pos.x - watermark.currentX;
-        mheight = pos.y - watermark.currentY;
-      } 
 
-      /*
-      
-       */
-      if (watermark.type == 'rect') {
-        watermark.px = pos.x - watermark.x;
-        watermark.py = pos.y - watermark.y;
+      for (var i = layer.length - 1; i >= 1; i--) {
+        var watermark = layer[i];
+        if (isInRect(event, canvas, watermark)){
+          dragable = true;
+          mwid = pos.x - watermark.x;
+          mheight = pos.y - watermark.y;
+          active = watermark;
+          break;
+        }
+      }
 
-        if (watermark.bHover[0]) {
-          watermark.px = pos.x - watermark.x;
-          watermark.py = pos.y - watermark.y;
-          watermark.bDrag[0] = true;
+      if (active && active.type == 'rect') {
+        active.px = pos.x - active.x;
+        active.py = pos.y - active.y;
+
+        if (active.bHover[0]) {
+          active.px = pos.x - active.x;
+          active.py = pos.y - active.y;
+          active.bDrag[0] = true;
         }
-        if (watermark.bHover[1]) {
-          watermark.px = pos.x - watermark.x - watermark.w;
-          watermark.py = pos.y - watermark.y;
-          watermark.bDrag[1] = true;
+        if (active.bHover[1]) {
+          active.px = pos.x - active.x - active.w;
+          active.py = pos.y - active.y;
+          active.bDrag[1] = true;
         }
-        if (watermark.bHover[2]) {
-          watermark.px = pos.x - watermark.x - watermark.w;
-          watermark.py = pos.y - watermark.y - watermark.h;
-          watermark.bDrag[2] = true;
+        if (active.bHover[2]) {
+          active.px = pos.x - active.x - active.w;
+          active.py = pos.y - active.y - active.h;
+          active.bDrag[2] = true;
         }
-        if (watermark.bHover[3]) {
-          watermark.px = pos.x - watermark.x;
-          watermark.py = pos.y - watermark.y - watermark.h;
-          watermark.bDrag[3] = true;
+        if (active.bHover[3]) {
+          active.px = pos.x - active.x;
+          active.py = pos.y - active.y - active.h;
+          active.bDrag[3] = true;
         }
       }
 
     },false);
 
     canvas.addEventListener('mousemove', function (event) {
-      if(watermark.type =='rect') {
+      /*for (var i = layer.length - 1; i >= 1; i--) {
+        var watermark = layer[i];
+        if (isInRect(event, canvas, watermark)){
+          active = watermark;
+          break;
+        }
+      }*/
+      if(active && active.type =='rect') {
 
         var pos = getMousePos(canvas, event.clientX, event.clientY);
 
         for (var i = 0; i < 4; i++) {
-          watermark.bHover[i] = false;
-          watermark.iCSize[i] = watermark.csize;
+          active.bHover[i] = false;
+          active.iCSize[i] = active.csize;
         }
 
-        if (pos.x > watermark.x - watermark.csizeh && pos.x < watermark.x + watermark.csizeh &&
-          pos.y > watermark.y - watermark.csizeh && pos.y < watermark.y + watermark.csizeh) {
-          watermark.bHover[0] = true;
-          watermark.iCSize[0] = watermark.csizeh;
+        if (pos.x > active.x - active.csizeh && pos.x < active.x + active.csizeh &&
+          pos.y > active.y - active.csizeh && pos.y < active.y + active.csizeh) {
+          active.bHover[0] = true;
+          active.iCSize[0] = active.csizeh;
           dragable = false;
         }
 
-        if (pos.x > watermark.x + watermark.w - watermark.csizeh && pos.x < watermark.x + watermark.w + watermark.csizeh &&
-          pos.y > watermark.y - watermark.csizeh && pos.y < watermark.y + watermark.csizeh) {
-          watermark.bHover[1] = true;
-          watermark.iCSize[1] = watermark.csizeh;
+        if (pos.x > active.x + active.w - active.csizeh && pos.x < active.x + active.w + active.csizeh &&
+          pos.y > active.y - active.csizeh && pos.y < active.y + active.csizeh) {
+          active.bHover[1] = true;
+          active.iCSize[1] = active.csizeh;
           dragable = false;
         }
 
-        if (pos.x > watermark.x + watermark.w - watermark.csizeh && pos.x < watermark.x + watermark.w + watermark.csizeh &&
-          pos.y > watermark.y + watermark.h - watermark.csizeh && pos.y < watermark.y + watermark.h + watermark.csizeh) {
-          watermark.bHover[2] = true;
-          watermark.iCSize[2] = watermark.csizeh;
+        if (pos.x > active.x + active.w - active.csizeh && pos.x < active.x + active.w + active.csizeh &&
+          pos.y > active.y + active.h - active.csizeh && pos.y < active.y + active.h + active.csizeh) {
+          active.bHover[2] = true;
+          active.iCSize[2] = active.csizeh;
           dragable = false;
         }
 
-        if (pos.x > watermark.x - watermark.csizeh && pos.x < watermark.x + watermark.csizeh &&
-          pos.y > watermark.y + watermark.h-watermark.csizeh && pos.y < watermark.y + watermark.h + watermark.csizeh) {
+        if (pos.x > active.x - active.csizeh && pos.x < active.x + active.csizeh &&
+          pos.y > active.y + active.h-active.csizeh && pos.y < active.y + active.h + active.csizeh) {
 
-          watermark.bHover[3] = true;
-          watermark.iCSize[3] = watermark.csizeh;
+          active.bHover[3] = true;
+          active.iCSize[3] = active.csizeh;
           dragable = false;
         }
 
@@ -266,44 +311,45 @@ canvasExt.factory('canvasHelper', function($rootScope) {
          */
         // in case of dragging of resize cubes
         var iFW, iFH;
-        if (watermark.bDrag[0]) {
-          var iFX = pos.x - watermark.px;
-          var iFY = pos.y - watermark.py;
-          iFW = watermark.w + watermark.x - iFX;
-          iFH = watermark.h + watermark.y - iFY;
+        if (active.bDrag[0]) {
+          var iFX = pos.x - active.px;
+          var iFY = pos.y - active.py;
+          iFW = active.w + active.x - iFX;
+          iFH = active.h + active.y - iFY;
         }
-        if (watermark.bDrag[1]) {
-          var iFX = watermark.x;
-          var iFY = pos.y - watermark.py;
-          iFW = pos.x - watermark.px - iFX;
-          iFH = watermark.h + watermark.y - iFY;
+        if (active.bDrag[1]) {
+          var iFX = active.x;
+          var iFY = pos.y - active.py;
+          iFW = pos.x - active.px - iFX;
+          iFH = active.h + active.y - iFY;
         }
-        if (watermark.bDrag[2]) {
-          var iFX = watermark.x;
-          var iFY = watermark.y;
-          iFW = pos.x - watermark.px - iFX;
-          iFH = pos.y - watermark.py - iFY;
+        if (active.bDrag[2]) {
+          var iFX = active.x;
+          var iFY = active.y;
+          iFW = pos.x - active.px - iFX;
+          iFH = pos.y - active.py - iFY;
         }
-        if (watermark.bDrag[3]) {
-          var iFX = pos.x - watermark.px;
-          var iFY = watermark.y;
-          iFW = watermark.w + watermark.x - iFX;
-          iFH = pos.y - watermark.py - iFY;
+        if (active.bDrag[3]) {
+          var iFX = pos.x - active.px;
+          var iFY = active.y;
+          iFW = active.w + active.x - iFX;
+          iFH = pos.y - active.py - iFY;
         }
 
-        if (iFW > watermark.csizeh * 2 && iFH > watermark.csizeh * 2) {
-          watermark.w = iFW;
-          watermark.h = iFH;
+        if (iFW > active.csizeh * 2 && iFH > active.csizeh * 2) {
+          active.w = iFW;
+          active.h = iFH;
 
-          watermark.x = iFX;
-          watermark.y = iFY;
+          active.x = iFX;
+          active.y = iFY;
         }
-  
-        watermark.width = watermark.w;
-        watermark.height = watermark.h; 
+      
+        active.width = active.w;
+        active.height = active.h; 
         
 
-        redraw(canvas, img, watermark);
+        redraw(canvas, layer);
+        callback(canvas.toDataURL());
       }
 
       if(!dragable)
@@ -312,32 +358,25 @@ canvasExt.factory('canvasHelper', function($rootScope) {
         var pos = getMousePos(canvas, event.clientX, event.clientY);
         canvas.style.cursor = 'move';
 
-        watermark.currentX = pos.x - mwid;
-        watermark.currentY = pos.y - mheight;
+        active.x = pos.x - mwid;
+        active.y = pos.y - mheight;
 
-        if(watermark.type == 'rect') {
-          watermark.x = watermark.currentX;
-          watermark.y = watermark.currentY;
-          watermark.width = watermark.w;
-          watermark.height = watermark.h; 
-        }
-        redraw(canvas, img, watermark);
+        redraw(canvas, layer);
+        callback(canvas.toDataURL());
       }
-
-      callback(canvas.toDataURL());
     },false);
+
   }
 
-  function redraw (canvas, img, watermark) {
+  function redraw (canvas, layer) {
     var ctx = canvas.getContext('2d');
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0);
-    if (watermark.type == 'rect')
-      watermark.draw(canvas);
-    else
-      ctx.drawImage(watermark, watermark.currentX, watermark.currentY);
+    for (var i = 0; i <= layer.length - 1; i++) {
+      layer[i].draw(canvas);
+    };
   }
+
 
   function getMousePos (canvas, x, y) {
     var rec = canvas.getBoundingClientRect();
@@ -353,9 +392,9 @@ canvasExt.factory('canvasHelper', function($rootScope) {
   function isInRect (event, canvas, rec) {
     var pos = getMousePos(canvas, event.clientX, event.clientY);
 
-    if ((pos.x > rec.currentX + rec.width) || pos.x < rec.currentX)
+    if ((pos.x > rec.x + rec.w) || pos.x < rec.x)
       return false;
-    if ((pos.y > rec.currentY + rec.height) || pos.y < rec.currentY)
+    if ((pos.y > rec.y + rec.h) || pos.y < rec.y)
       return false;
 
     return true;
@@ -365,8 +404,8 @@ canvasExt.factory('canvasHelper', function($rootScope) {
   function Selection (x, y, width, height) {
     this.x = x;
     this.y = y;
-    this.currentX = x;
-    this.currentY = y;
+    /*this.currentX = x;
+    this.currentY = y;*/
     this.w = width;
     this.h = height;
     this.type = 'rect';
@@ -376,7 +415,7 @@ canvasExt.factory('canvasHelper', function($rootScope) {
     this.iCSize = [this.csize, this.csize, this.csize, this.csize]; // resize cubes sizes
     this.bHover = [false, false, false, false]; // hover statuses
     this.bDrag = [false, false, false, false]; // drag statuses
-    this.bDragAll = false; // drag whole selection
+    //this.bDragAll = false; // drag whole selection
 
     this.draw = function (canvas) {
       var ctx = canvas.getContext('2d');
@@ -392,12 +431,26 @@ canvasExt.factory('canvasHelper', function($rootScope) {
     };
   }
 
-  
+  //add
+  function ImageObj (img, width, height) {
+    this.x = 0;
+    this.y = 0;
+    this.w = width;
+    this.h = height;
+    this.type = 'img';
+
+    this.draw = function (canvas) {
+      var ctx = canvas.getContext('2d');
+
+      ctx.drawImage(img, this.x, this.y);
+    }
+  }
 
   return {
     createCanvasContext: createCanvasContext,
     canvasToDataURI: canvasToDataURI,
     fileToDataURI: fileToDataURI,
+    init: init,
     //process
     toGray: toGray,
     sharp: sharp,
@@ -489,6 +542,7 @@ canvasExt.directive('canvasExt', function(canvasHelper) {
         canvas.width = img.width;
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
+        canvasHelper.init(canvas, img, updateSrc);
 
         return canvas;
       }

@@ -8,7 +8,7 @@
 <body ng-app="app">
 	<div ng-controller="controller">
 		<div class="btn btn-primary btn-file">
-			Open New file
+			打开新图片
 			<input type="file" file-src="canvas.src" />
 		</div>
 		<!-- <a href="{{ canvas.src }}" download='t.png'>a</a> 
@@ -17,22 +17,22 @@
 			<canvas width="600px" height="400px" class="center-block" canvas-ext src="canvas.src" process="canvas.process" protype="canvas.protype" watermark="canvas.watermark" dataurl="canvas.dataurl"></canvas>
 		</div>
 		<div class="process-bar navbar-fixed-bottom">
-			<button class="btn btn-default" ng-click="process($event)" data-protype="toGray">Gray</button>
-			<button class="btn btn-default" ng-click="process($event)" data-protype="sharp">Sharp</button>
-			<button class="btn btn-default" ng-click="process($event)" data-protype="invert">Invert</button>
-			<button class="btn btn-default" ng-click="process($event)" data-protype="zoomIn">ZoomIn</button>
-			<button class="btn btn-default" ng-click="process($event)" data-protype="zoomOut">ZoomOut</button>
-			<button class="btn btn-default" ng-click="process($event)" data-protype="rotate">Rotate</button>
-			<button class="btn btn-default" ng-click="process($event)" data-protype="crop">crop</button>
+			<button class="btn btn-default" ng-click="process($event)" data-protype="toGray">灰度化</button>
+			<button class="btn btn-default" ng-click="process($event)" data-protype="sharp">锐化</button>
+			<button class="btn btn-default" ng-click="process($event)" data-protype="invert">反色</button>
+			<button class="btn btn-default" ng-click="process($event)" data-protype="zoomIn">缩小</button>
+			<button class="btn btn-default" ng-click="process($event)" data-protype="zoomOut">放大</button>
+			<button class="btn btn-default" ng-click="process($event)" data-protype="rotate">旋转</button>
+			<button class="btn btn-default" ng-click="process($event)" data-protype="crop">裁切</button>
 			<div style="display:inline-block">
 				<div class="btn btn-file btn-default">
-					Choose the watermark file
+					选择水印图片
 					<input type="file" file-src="canvas.watermark" />					
 				</div>
-				<button class="btn btn-default" ng-click="process($event)" data-protype="watermark">watermark</button>
+				<button class="btn btn-default" ng-click="process($event)" data-protype="watermark">添加水印</button>
 			</div>
 			<div>
-				<button class="btn btn-default" ng-click="saveImage($event)">Save As</button>	
+				<button class="btn btn-default" ng-click="saveImage($event)">保存为</button>	
 				<select ng-model="canvas.format">
 					<option value="png">png</option>
 					<option value="jpg">jpg</option>
